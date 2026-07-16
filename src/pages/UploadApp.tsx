@@ -5,7 +5,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { DeviceType, Category, AppType } from '../types';
-import { ArrowLeft, Upload, CheckCircle2, Image as ImageIcon, FileBox, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle2, Image as ImageIcon, FileBox, AlertCircle, Plus } from 'lucide-react';
 
 const devices: DeviceType[] = ['Android Phone', 'Tablet', 'Android TV', 'Wear OS', 'Chromebook'];
 const categories: Category[] = ['Tools', 'Productivity', 'Social', 'Photography', 'Music', 'Video', 'Education', 'Business', 'Finance', 'Health', 'Lifestyle', 'Shopping', 'Communication', 'Entertainment', 'Action', 'Adventure', 'Arcade', 'Puzzle', 'Racing', 'Sports', 'Strategy', 'Simulation', 'Casual', 'Role Playing'];
@@ -183,7 +183,11 @@ const UploadApp: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to upload app. Check Firebase config.');
+      if (err.code === 'permission-denied') {
+        setError('Missing Firestore permissions. Please update your Firebase security rules to allow write access to the apps and users collections.');
+      } else {
+        setError(err.message || 'Failed to upload app. Check Firebase config.');
+      }
       setUploadProgress(0);
     } finally {
       setLoading(false);

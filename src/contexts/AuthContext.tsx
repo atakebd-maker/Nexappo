@@ -32,11 +32,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (userDoc.exists()) {
         setUserProfile(userDoc.data() as UserProfile);
       } else {
-        setUserProfile(null);
+        // Fallback if document doesn't exist but user is logged in
+        setUserProfile({
+          uid: user.uid,
+          email: user.email || '',
+          displayName: user.displayName || user.email?.split('@')[0] || 'User',
+          photoURL: user.photoURL || '',
+          createdAt: Date.now(),
+          isVerifiedPublisher: false
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching user profile:", error);
-      setUserProfile(null);
+      // Fallback on permission error so the app doesn't break
+      setUserProfile({
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || user.email?.split('@')[0] || 'User',
+        photoURL: user.photoURL || '',
+        createdAt: Date.now(),
+        isVerifiedPublisher: false
+      });
     }
   };
 

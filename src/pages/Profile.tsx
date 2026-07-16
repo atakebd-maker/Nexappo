@@ -4,7 +4,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { AppItem } from '../types';
-import { Settings, Edit2, Plus, Grid, Gamepad2, AlertCircle } from 'lucide-react';
+import { Settings, Edit2, Plus, Grid, Gamepad2, AlertCircle, User } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { userProfile, currentUser } = useAuth();
@@ -13,6 +13,8 @@ const Profile: React.FC = () => {
   const [myApps, setMyApps] = useState<AppItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchMyApps = async () => {
       if (!db || !currentUser) {
@@ -20,6 +22,7 @@ const Profile: React.FC = () => {
         return;
       }
       setLoading(true);
+      setError(null);
       try {
         const q = query(
           collection(db, 'apps'),
@@ -28,8 +31,13 @@ const Profile: React.FC = () => {
         const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppItem));
         setMyApps(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching my apps:", error);
+        if (error.code === 'permission-denied') {
+          setError('Missing Firestore permissions. Please update your Firebase security rules to allow read access to the apps collection.');
+        } else {
+          setError('Failed to load apps. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }
@@ -37,10 +45,38 @@ const Profile: React.FC = () => {
     fetchMyApps();
   }, [currentUser]);
 
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full py-20 px-4 text-center">
+        <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
+          <User className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Sign in to view your profile</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm">
+          Join NexAppo to upload apps, track downloads, and customize your profile.
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => navigate('/login')}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => navigate('/register')}
+            className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            Create Account
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!userProfile) {
     return (
       <div className="flex justify-center items-center h-full py-20">
-        <div className="text-slate-500">Profile not found.</div>
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -150,6 +186,14 @@ const Profile: React.FC = () => {
         {loading ? (
           <div className="flex justify-center py-10">
             <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center py-20 text-center bg-red-50 dark:bg-red-900/20 rounded-3xl border border-red-100 dark:border-red-800">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2">Error Loading Data</h3>
+            <p className="text-red-600 dark:text-red-300 text-sm max-w-sm">
+              {error}
+            </p>
           </div>
         ) : displayedContent.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-center bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">

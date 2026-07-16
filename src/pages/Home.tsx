@@ -10,12 +10,14 @@ import { PackageOpen } from 'lucide-react';
 const Home: React.FC = () => {
   const [apps, setApps] = useState<AppItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [device, setDevice] = useState<DeviceType | 'All'>('All');
   const [category, setCategory] = useState<Category | 'All'>('All');
 
   useEffect(() => {
     const fetchApps = async () => {
       setLoading(true);
+      setError(null);
       if (!db) {
         setLoading(false);
         return;
@@ -25,8 +27,13 @@ const Home: React.FC = () => {
         const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppItem));
         setApps(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching apps: ", error);
+        if (error.code === 'permission-denied') {
+          setError('Missing Firestore permissions. Please update your Firebase security rules to allow read access to the apps collection.');
+        } else {
+          setError('Failed to load apps. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }
@@ -54,6 +61,16 @@ const Home: React.FC = () => {
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-red-50 dark:bg-red-900/20 rounded-3xl border border-red-100 dark:border-red-800">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mb-4">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h3 className="text-xl font-bold text-red-700 dark:text-red-400 mb-2">Error Loading Data</h3>
+            <p className="text-red-600 dark:text-red-300 max-w-md">
+              {error}
+            </p>
           </div>
         ) : filteredApps.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
