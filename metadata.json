@@ -1,0 +1,6 @@
+{
+  "name": "NexAppo",
+  "description": "A premium, production-ready alternative App Store to discover, download, and share mobile applications and games.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
