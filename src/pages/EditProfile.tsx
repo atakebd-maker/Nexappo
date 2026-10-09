@@ -38,8 +38,11 @@ const EditProfile: React.FC = () => {
       if (avatarFile && storage) {
         const storageRef = ref(storage, `avatars/${currentUser.uid}_${avatarFile.name}`);
         const uploadTask = uploadBytesResumable(storageRef, avatarFile);
-        await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', null, reject, resolve);
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on('state_changed', null, 
+            (error) => reject(error), 
+            () => resolve()
+          );
         });
         photoURL = await getDownloadURL(uploadTask.snapshot.ref);
       }
@@ -62,8 +65,8 @@ const EditProfile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pt-safe py-3 flex items-center justify-between">
         <div className="flex items-center">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
             <ArrowLeft className="w-6 h-6" />

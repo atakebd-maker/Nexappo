@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import { AuthProvider } from './contexts/AuthContext';
+import { UploadProvider } from './contexts/UploadContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -19,34 +20,38 @@ import Notifications from './pages/Notifications';
 import PublisherProfile from './pages/PublisherProfile';
 import Bookmarks from './pages/Bookmarks';
 import DownloadHistory from './pages/DownloadHistory';
+import UploadProgressWidget from './components/UploadProgressWidget';
 
 export default function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<Home />} />
-            <Route path="apps" element={<Apps />} />
-            <Route path="games" element={<Games />} />
-            <Route path="app/:id" element={<AppDetails />} />
-            <Route path="publisher/:id" element={<PublisherProfile />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="upload" element={<UploadApp />} />
-            <Route path="edit-app/:id" element={<EditApp />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="edit-profile" element={<EditProfile />} />
-            <Route path="search" element={<Search />} />
-            <Route path="notifications" element={<Notifications />} />
-            <Route path="bookmarks" element={<Bookmarks />} />
-            <Route path="downloads" element={<DownloadHistory />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <UploadProvider>
+        <HashRouter>
+          <UploadProgressWidget />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route index element={<Home />} />
+              <Route path="apps" element={<Apps />} />
+              <Route path="games" element={<Games />} />
+              <Route path="app/:id" element={<AppDetails />} />
+              <Route path="publisher/:id" element={<PublisherProfile />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="upload" element={<UploadApp />} />
+              <Route path="edit-app/:id" element={<EditApp />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="edit-profile" element={<EditProfile />} />
+              <Route path="search" element={<Search />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="bookmarks" element={<Bookmarks />} />
+              <Route path="downloads" element={<DownloadHistory />} />
+            </Route>
+          </Routes>
+        </HashRouter>
+      </UploadProvider>
     </AuthProvider>
   );
 }

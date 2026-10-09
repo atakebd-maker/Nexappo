@@ -50,8 +50,8 @@ const Search: React.FC = () => {
   }, [searchTerm, allApps]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
-      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-safe py-3">
         <div className="flex items-center gap-3 max-w-4xl mx-auto">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
             <ArrowLeft className="w-6 h-6" />

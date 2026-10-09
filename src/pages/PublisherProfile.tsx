@@ -30,6 +30,26 @@ const PublisherProfile: React.FC = () => {
         const appsSnap = await getDocs(q);
         const appsData = appsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppItem));
         setPublisherApps(appsData);
+
+        if (!pubSnap.exists() && appsData.length > 0) {
+          const firstApp = appsData[0];
+          setPublisher({
+            uid: id,
+            displayName: firstApp.publisherName || 'Unknown Publisher',
+            email: '',
+            photoURL: firstApp.publisherAvatar || '',
+            joinDate: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            totalApps: appsData.filter(a => a.appType === 'App').length,
+            totalGames: appsData.filter(a => a.appType === 'Game').length,
+            totalDownloads: appsData.reduce((sum, app) => sum + (app.downloadCount || 0), 0),
+            totalRatingsReceived: 0,
+            savedApps: [],
+            bookmarks: [],
+            role: 'Standard User',
+            isVerifiedPublisher: false
+          });
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -46,8 +66,8 @@ const PublisherProfile: React.FC = () => {
   const totalDownloads = publisherApps.reduce((sum, app) => sum + app.downloadCount, 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pt-safe py-3 flex items-center">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
           <ArrowLeft className="w-6 h-6" />
         </button>
@@ -63,7 +83,7 @@ const PublisherProfile: React.FC = () => {
                 <img src={publisher.photoURL} alt={publisher.displayName} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {publisher.displayName.charAt(0).toUpperCase()}
+                  {(publisher.displayName || 'U').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>

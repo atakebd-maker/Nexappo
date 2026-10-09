@@ -90,33 +90,38 @@ const AppDetails: React.FC = () => {
     }
   };
 
+  const [installState, setInstallState] = useState<'none' | 'installed'>('none');
+  
   const handleInstall = async () => {
-    if (!app || !currentUser || !db) return;
-    
-    // Increment download count
-    try {
-      const appRef = doc(db, 'apps', app.id);
-      await updateDoc(appRef, {
-        downloadCount: increment(1)
-      });
-      setApp({ ...app, downloadCount: app.downloadCount + 1 });
-      
-      // Record download
-      await addDoc(collection(db, 'downloads'), {
-        userId: currentUser.uid,
-        appId: app.id,
-        appName: app.appName,
-        appVersion: app.version,
-        apkSize: app.apkSize,
-        downloadDate: Date.now()
-      });
+    if (!app) return;
 
-      // Start download (assuming apkFileURL is a direct link)
-      window.open(app.apkFileURL, '_blank');
-    } catch (err) {
-      console.error('Error tracking download:', err);
-      // Still allow download even if tracking fails
-      window.open(app.apkFileURL, '_blank');
+    // Immediately open the URL in a new tab
+    window.open(app.apkFileURL, '_blank');
+
+    if (installState !== 'installed') {
+      setInstallState('installed');
+      // Increment download count and record
+      if (currentUser && db) {
+        try {
+          const appRef = doc(db, 'apps', app.id);
+          updateDoc(appRef, {
+            downloadCount: increment(1)
+          });
+          setApp({ ...app, downloadCount: app.downloadCount + 1 });
+          
+          // Record download
+          addDoc(collection(db, 'downloads'), {
+            userId: currentUser.uid,
+            appId: app.id,
+            appName: app.appName,
+            appVersion: app.version,
+            apkSize: app.apkSize,
+            downloadDate: Date.now()
+          });
+        } catch (err) {
+          console.error('Error tracking download:', err);
+        }
+      }
     }
   };
 
@@ -200,9 +205,9 @@ const AppDetails: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pt-safe py-3 flex items-center justify-between pt-safe">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
           <ArrowLeft className="w-6 h-6" />
         </button>
@@ -226,16 +231,23 @@ const AppDetails: React.FC = () => {
             <img src={app.logoURL} alt={app.appName} className="w-full h-full object-cover" />
           </div>
           
-          <div className="flex-1 flex flex-col justify-center text-center md:text-left">
+          <div className="flex-1 flex flex-col justify-center text-center md:text-left items-center md:items-start">
             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">{app.appName}</h1>
-            <p 
+            <button 
               onClick={() => navigate(`/publisher/${app.publisherId}`)}
-              className="text-indigo-600 dark:text-indigo-400 font-semibold text-lg cursor-pointer hover:underline mb-4 w-fit"
+              className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold text-lg cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-3 py-1 -ml-3 rounded-full transition-colors mb-4 w-fit"
             >
+              <div className="w-6 h-6 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center">
+                {app.publisherAvatar ? (
+                  <img src={app.publisherAvatar} alt={app.publisherName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs font-bold text-indigo-600">{(app.publisherName || 'U').charAt(0).toUpperCase()}</span>
+                )}
+              </div>
               {app.publisherName}
-            </p>
+            </button>
             
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-slate-600 dark:text-slate-400">
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-slate-600 dark:text-slate-400 w-full">
               <div className="flex flex-col items-center md:items-start">
                 <div className="flex items-center font-bold text-slate-900 dark:text-white text-base">
                   {app.averageRating.toFixed(1)} <Star className="w-4 h-4 ml-1 fill-current text-amber-400" />
@@ -256,9 +268,11 @@ const AppDetails: React.FC = () => {
             
             <button 
               onClick={handleInstall}
-              className="mt-6 w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all text-white py-4 px-10 rounded-full font-bold text-lg shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
+              className="mt-6 w-full md:w-auto relative overflow-hidden bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all text-white py-4 px-10 rounded-full font-bold text-lg shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
             >
-              <Download className="w-6 h-6" /> Install
+              <span className="relative z-10 flex items-center gap-2">
+                <Download className="w-6 h-6" /> {installState === 'installed' ? 'Install Again' : 'Install'}
+              </span>
             </button>
           </div>
         </section>
@@ -275,12 +289,12 @@ const AppDetails: React.FC = () => {
         {/* Screenshots Gallery */}
         {app.screenshotURLs && app.screenshotURLs.length > 0 && (
           <section className="mb-8 pl-4 md:pl-8">
-            <div className="flex overflow-x-auto gap-4 hide-scrollbar pb-4 pr-4">
+            <div className="flex overflow-x-auto gap-4 hide-scrollbar pb-4 pr-4 snap-x snap-mandatory">
               {app.screenshotURLs.map((url, idx) => (
                 <div 
                   key={idx} 
                   onClick={() => setActiveScreenshot(url)}
-                  className="w-40 sm:w-56 md:w-64 aspect-[9/16] rounded-2xl overflow-hidden shrink-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                  className="w-40 sm:w-56 md:w-64 aspect-[9/16] rounded-2xl overflow-hidden shrink-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow snap-center"
                 >
                   <img src={url} alt={`Screenshot ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                 </div>
@@ -366,7 +380,7 @@ const AppDetails: React.FC = () => {
                       <img src={review.userAvatar} alt={review.userName} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-indigo-600 font-bold text-lg">
-                        {review.userName.charAt(0).toUpperCase()}
+                        {(review.userName || 'U').charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>

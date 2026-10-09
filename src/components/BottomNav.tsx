@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Grid, Gamepad2, User } from 'lucide-react';
+import { Home, Grid, Gamepad2, User, Search } from 'lucide-react';
 
 const BottomNav: React.FC = () => {
   const navItems = [
     { name: 'Home', path: '/', icon: <Home className="w-6 h-6" /> },
     { name: 'Apps', path: '/apps', icon: <Grid className="w-6 h-6" /> },
+    { name: 'Search', path: '/search', icon: <Search className="w-6 h-6" /> },
     { name: 'Games', path: '/games', icon: <Gamepad2 className="w-6 h-6" /> },
     { name: 'Profile', path: '/profile', icon: <User className="w-6 h-6" /> },
   ];

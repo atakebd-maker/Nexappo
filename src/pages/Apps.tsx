@@ -26,11 +26,11 @@ const Apps: React.FC = () => {
         const q = query(
           collection(db, 'apps'), 
           where('appType', '==', 'App'),
-          orderBy('createdAt', 'desc'), 
           limit(50)
         );
         const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppItem));
+        data.sort((a, b) => b.createdAt - a.createdAt);
         setApps(data);
       } catch (error: any) {
         console.error("Error fetching apps: ", error);

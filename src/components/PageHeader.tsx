@@ -10,7 +10,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title }) => {
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-4 lg:px-8">
+    <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-4 lg:px-8 pt-safe">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-3 lg:hidden">
           <img 
@@ -37,10 +37,20 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title }) => {
           {title && <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{title}</h1>}
         </div>
 
+        <div className="flex-1 max-w-xl mx-auto hidden md:flex items-center mx-4">
+          <div 
+            onClick={() => navigate('/search')}
+            className="w-full flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2.5 cursor-text text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Search className="w-5 h-5 mr-2 shrink-0" />
+            <span className="text-sm">Search apps, games, publishers...</span>
+          </div>
+        </div>
+        
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/search')}
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+            className="md:hidden p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <Search className="w-6 h-6" />
           </button>

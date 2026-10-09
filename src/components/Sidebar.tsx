@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Grid, Gamepad2, User, Settings, Compass, Bookmark, DownloadCloud } from 'lucide-react';
+import { Home, Grid, Gamepad2, User, Settings, Compass, Bookmark, DownloadCloud, Search } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const navItems = [
     { name: 'Home', path: '/', icon: <Home className="w-5 h-5" /> },
+    { name: 'Search', path: '/search', icon: <Search className="w-5 h-5" /> },
     { name: 'Apps', path: '/apps', icon: <Grid className="w-5 h-5" /> },
     { name: 'Games', path: '/games', icon: <Gamepad2 className="w-5 h-5" /> },
     { name: 'Bookmarks', path: '/bookmarks', icon: <Bookmark className="w-5 h-5" /> },

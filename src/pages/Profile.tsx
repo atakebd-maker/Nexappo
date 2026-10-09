@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { AppItem } from '../types';
-import { Settings, Edit2, Plus, Grid, Gamepad2, AlertCircle, User } from 'lucide-react';
+import { Settings, Edit2, Plus, Grid, Gamepad2, AlertCircle, User, Trash2 } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { userProfile, currentUser } = useAuth();
@@ -45,6 +45,29 @@ const Profile: React.FC = () => {
     fetchMyApps();
   }, [currentUser]);
 
+  const handleDeleteApp = async (appId: string) => {
+    if (!window.confirm('Are you sure you want to delete this app?')) return;
+    try {
+      if (db) {
+        const appToDelete = myApps.find(a => a.id === appId);
+        await deleteDoc(doc(db, 'apps', appId));
+        
+        if (currentUser && userProfile && appToDelete) {
+          const userRef = doc(db, 'users', currentUser.uid);
+          if (appToDelete.appType === 'App') {
+            await updateDoc(userRef, { totalApps: Math.max(0, userProfile.totalApps - 1) });
+          } else {
+            await updateDoc(userRef, { totalGames: Math.max(0, userProfile.totalGames - 1) });
+          }
+        }
+      }
+      setMyApps(prev => prev.filter(app => app.id !== appId));
+    } catch (err) {
+      console.error('Failed to delete app:', err);
+      alert('Failed to delete app.');
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="flex flex-col justify-center items-center h-full py-20 px-4 text-center">
@@ -84,7 +107,7 @@ const Profile: React.FC = () => {
   const displayedContent = myApps.filter(app => app.appType === (activeTab === 'Apps' ? 'App' : 'Game'));
 
   return (
-    <div className="flex flex-col min-h-full pb-20">
+    <div className="flex flex-col min-h-full">
       {/* Profile Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8 md:py-12 relative">
@@ -108,22 +131,29 @@ const Profile: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-24 h-24 md:w-32 md:h-32 bg-indigo-100 dark:bg-indigo-900/30 rounded-full overflow-hidden flex items-center justify-center border-4 border-white dark:border-slate-900 shadow-lg shrink-0">
               {userProfile.photoURL ? (
-                <img src={userProfile.photoURL} alt={userProfile.displayName} className="w-full h-full object-cover" />
+                <img src={userProfile.photoURL} alt={userProfile.displayName || 'User'} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl md:text-4xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {userProfile.displayName.charAt(0).toUpperCase()}
+                  {(userProfile.displayName || 'U').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
             
             <div className="text-center md:text-left flex-1">
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center justify-center md:justify-start gap-2">
-                {userProfile.displayName}
+                {userProfile.displayName || 'Unknown User'}
+                <button 
+                  onClick={() => navigate('/edit-profile')} 
+                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-indigo-600"
+                  title="Edit Name/Avatar"
+                >
+                  <Edit2 className="w-5 h-5" />
+                </button>
                 {userProfile.isVerifiedPublisher && (
                   <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full uppercase font-bold tracking-wider">Verified</span>
                 )}
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">{userProfile.email}</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">{userProfile.email || 'No email'}</p>
               
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-4 text-sm">
                 <div className="text-slate-600 dark:text-slate-300">
@@ -134,7 +164,7 @@ const Profile: React.FC = () => {
                 </div>
                 <div className="text-slate-600 dark:text-slate-300">
                   <span className="font-bold text-slate-900 dark:text-white mr-1">
-                    {myApps.reduce((acc, app) => acc + app.downloadCount, 0)}
+                    {myApps.reduce((acc, app) => acc + (app.downloadCount || 0), 0)}
                   </span> Downloads
                 </div>
               </div>
@@ -221,12 +251,22 @@ const Profile: React.FC = () => {
                     <span>{app.apkSize} MB</span>
                   </div>
                 </div>
-                <button 
-                  onClick={() => navigate(`/edit-app/${app.id}`)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 text-sm font-semibold rounded-xl transition-colors shrink-0"
-                >
-                  Edit
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button 
+                    onClick={() => navigate(`/edit-app/${app.id}`)}
+                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteApp(app.id)}
+                    className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-xl transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
