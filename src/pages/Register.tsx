@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { Compass, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { getAuthErrorMessage } from '../firebase/authErrors';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -15,37 +16,44 @@ const Register: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth || !db) {
-      setError('Firebase is not configured. Please add your config in src/firebase/config.ts');
+    if (!auth) {
+      setError('Firebase কনফিগারেশন পাওয়া যায়নি। দয়া করে src/firebase/config.ts চেক করুন।');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
       
       // Create user profile
-      const userRef = doc(db, 'users', result.user.uid);
-      await setDoc(userRef, {
-        uid: result.user.uid,
-        displayName: name || 'User',
-        email: result.user.email,
-        photoURL: '',
-        joinDate: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        totalApps: 0,
-        totalGames: 0,
-        totalDownloads: 0,
-        totalRatingsReceived: 0,
-        savedApps: [],
-        bookmarks: [],
-        role: 'Standard User',
-        isVerifiedPublisher: false
-      });
+      if (db) {
+        try {
+          const userRef = doc(db, 'users', result.user.uid);
+          await setDoc(userRef, {
+            uid: result.user.uid,
+            displayName: name.trim() || 'User',
+            email: result.user.email,
+            photoURL: '',
+            joinDate: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            totalApps: 0,
+            totalGames: 0,
+            totalDownloads: 0,
+            totalRatingsReceived: 0,
+            savedApps: [],
+            bookmarks: [],
+            role: 'Standard User',
+            isVerifiedPublisher: false
+          });
+        } catch (docErr) {
+          console.warn("Could not write user profile doc:", docErr);
+        }
+      }
 
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to create an account');
+      console.error("Register error:", err);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

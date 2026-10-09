@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth, db } from '../firebase/config';
-import { Compass, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Compass, Mail, Lock, AlertCircle, UserPlus, Info } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getAuthErrorMessage } from '../firebase/authErrors';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,16 +16,17 @@ const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) {
-      setError('Firebase is not configured. Please add your config in src/firebase/config.ts');
+      setError('Firebase কনফিগারেশন পাওয়া যায়নি। দয়া করে src/firebase/config.ts চেক করুন।');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to log in');
+      console.error("Login error:", err);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -41,33 +43,37 @@ const Login: React.FC = () => {
       
       // Ensure user profile exists
       if (db) {
-        const userRef = doc(db, 'users', result.user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            uid: result.user.uid,
-            displayName: result.user.displayName || 'User',
-            email: result.user.email,
-            photoURL: result.user.photoURL || '',
-            joinDate: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            totalApps: 0,
-            totalGames: 0,
-            totalDownloads: 0,
-            totalRatingsReceived: 0,
-            savedApps: [],
-            bookmarks: [],
-            role: 'Standard User',
-            isVerifiedPublisher: false
-          });
+        try {
+          const userRef = doc(db, 'users', result.user.uid);
+          const userSnap = await getDoc(userRef);
+          if (!userSnap.exists()) {
+            await setDoc(userRef, {
+              uid: result.user.uid,
+              displayName: result.user.displayName || 'User',
+              email: result.user.email,
+              photoURL: result.user.photoURL || '',
+              joinDate: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              totalApps: 0,
+              totalGames: 0,
+              totalDownloads: 0,
+              totalRatingsReceived: 0,
+              savedApps: [],
+              bookmarks: [],
+              role: 'Standard User',
+              isVerifiedPublisher: false
+            });
+          }
+        } catch (docErr) {
+          console.warn("Could not sync user profile to firestore:", docErr);
         }
       }
       navigate('/');
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in popup was closed. Please try again or open the app in a new tab if it was blocked.');
+        setError('গুগল সাইন-ইন পপআপ উইন্ডো বন্ধ করা হয়েছে।');
       } else {
-        setError(err.message || 'Failed to sign in with Google');
+        setError(getAuthErrorMessage(err));
       }
     }
   };
@@ -102,9 +108,21 @@ const Login: React.FC = () => {
         <div className="bg-white dark:bg-slate-800 py-8 px-4 shadow-xl sm:rounded-3xl sm:px-10 border border-slate-100 dark:border-slate-700/50">
           
           {error && (
-            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-md flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            <div className="mb-5 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-xl flex flex-col gap-2 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed font-medium">{error}</p>
+              </div>
+              <div className="mt-1 pt-2 border-t border-red-100 dark:border-red-800/40 flex items-center justify-between">
+                <span className="text-xs text-red-600 dark:text-red-400">অ্যাকাউন্ট না থাকলে:</span>
+                <Link 
+                  to="/register" 
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-800 shadow-xs"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  নতুন অ্যাকাউন্ট খুলুন (Register)
+                </Link>
+              </div>
             </div>
           )}
 
